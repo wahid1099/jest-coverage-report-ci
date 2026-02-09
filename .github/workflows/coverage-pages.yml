@@ -41,43 +41,55 @@ jobs:
           cd frontend
           npm test
 
-      # Install PDF conversion tools
-      - name: Install PDF conversion dependencies
-        run: |
-          npm install -g html-pdf
-
+      # Generate PDF reports using Puppeteer
       - name: Generate PDF reports
         run: |
           mkdir -p pdfs
-          # Create a simple Node.js script to convert HTML to PDF
+          npm install puppeteer
           cat > convert-to-pdf.js << 'EOF'
+          const puppeteer = require('puppeteer');
           const fs = require('fs');
           const path = require('path');
-          const htmlPdf = require('html-pdf');
           
-          const options = {
-            format: 'A4',
-            orientation: 'portrait',
-            border: '10mm',
-            timeout: 30000
-          };
-          
-          // Convert backend coverage
-          const backendHtml = fs.readFileSync('backend/coverage/index.html', 'utf8');
-          htmlPdf.create(backendHtml, options).toFile('pdfs/backend-coverage-report.pdf', (err, res) => {
-            if (err) console.log('Backend PDF Error:', err);
-            else console.log('Backend PDF created:', res.filename);
-          });
-          
-          // Convert frontend coverage
-          const frontendHtml = fs.readFileSync('frontend/coverage/index.html', 'utf8');
-          htmlPdf.create(frontendHtml, options).toFile('pdfs/frontend-coverage-report.pdf', (err, res) => {
-            if (err) console.log('Frontend PDF Error:', err);
-            else console.log('Frontend PDF created:', res.filename);
-          });
+          (async () => {
+            const browser = await puppeteer.launch({
+              args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+            
+            try {
+              // Backend Coverage PDF
+              const backendPage = await browser.newPage();
+              const backendPath = 'file://' + path.resolve('backend/coverage/index.html');
+              await backendPage.goto(backendPath, { waitUntil: 'networkidle0', timeout: 60000 });
+              await backendPage.pdf({ 
+                path: 'pdfs/backend-coverage-report.pdf', 
+                format: 'A4',
+                margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
+              });
+              await backendPage.close();
+              console.log('✓ Backend PDF created');
+              
+              // Frontend Coverage PDF
+              const frontendPage = await browser.newPage();
+              const frontendPath = 'file://' + path.resolve('frontend/coverage/index.html');
+              await frontendPage.goto(frontendPath, { waitUntil: 'networkidle0', timeout: 60000 });
+              await frontendPage.pdf({ 
+                path: 'pdfs/frontend-coverage-report.pdf', 
+                format: 'A4',
+                margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
+              });
+              await frontendPage.close();
+              console.log('✓ Frontend PDF created');
+              
+            } catch (error) {
+              console.error('PDF Generation Error:', error);
+              process.exit(1);
+            } finally {
+              await browser.close();
+            }
+          })();
           EOF
           node convert-to-pdf.js
-          sleep 5
 
       # Upload Coverage Artifacts (HTML + PDF)
       - name: Upload backend coverage reports
