@@ -41,19 +41,40 @@ jobs:
           cd frontend
           npm test
 
-      # Upload Coverage Artifacts
+      # Convert HTML Reports to PDF
+      - name: Install PDF converter
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wkhtmltopdf xvfb
+
+      - name: Generate PDF reports
+        run: |
+          mkdir -p pdfs
+          # Backend coverage PDF
+          xvfb-run --auto-servernum wkhtmltopdf backend/coverage/index.html pdfs/backend-coverage-report.pdf
+          # Frontend coverage PDF
+          xvfb-run --auto-servernum wkhtmltopdf frontend/coverage/index.html pdfs/frontend-coverage-report.pdf
+
+      # Upload Coverage Artifacts (HTML + PDF)
       - name: Upload backend coverage reports
         uses: actions/upload-artifact@v4
         with:
-          name: backend-coverage
+          name: backend-coverage-html
           path: backend/coverage/
           retention-days: 30
 
       - name: Upload frontend coverage reports
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-coverage
+          name: frontend-coverage-html
           path: frontend/coverage/
+          retention-days: 30
+
+      - name: Upload PDF reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports-pdf
+          path: pdfs/
           retention-days: 30
 
       - name: Upload combined coverage reports
@@ -63,6 +84,7 @@ jobs:
           path: |
             backend/coverage/
             frontend/coverage/
+            pdfs/
           retention-days: 30
 
       # Prepare Pages
