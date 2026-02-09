@@ -47,7 +47,6 @@ jobs:
           mkdir -p public/backend public/frontend
           cp -r backend/coverage/* public/backend/
           cp -r frontend/coverage/* public/frontend/
-          cp public/index.html public/index.html
 
       # Deploy
       - name: Deploy to GitHub Pages
