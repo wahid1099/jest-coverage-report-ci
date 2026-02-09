@@ -92,36 +92,15 @@ jobs:
           node convert-to-pdf.js
 
       # Upload Coverage Artifacts (HTML + PDF)
-      - name: Upload backend coverage reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage-html
-          path: backend/coverage/
-          retention-days: 30
-
-      - name: Upload frontend coverage reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-coverage-html
-          path: frontend/coverage/
-          retention-days: 30
-
-      - name: Upload PDF reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-reports-pdf
-          path: pdfs/
-          retention-days: 30
-
       - name: Upload combined coverage reports
         uses: actions/upload-artifact@v4
         with:
-          name: all-coverage-reports
+          name: coverage-reports-${{ github.run_id }}
           path: |
             backend/coverage/
             frontend/coverage/
             pdfs/
-          retention-days: 30
+          retention-days: 90
 
       # Prepare Pages
       - name: Prepare Pages content
